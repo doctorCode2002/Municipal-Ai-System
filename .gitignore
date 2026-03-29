@@ -1,0 +1,34 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ── Environment / secrets ───────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# (keep .env.example files)
+!**/.env.example
+
+# ── Database (SQLite is committed for demo seed data; add here if not wanted) ─
+# municipal.db   ← remove this comment to exclude the DB from git
+
+# ── Node / frontend ──────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/build/
+*.log
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

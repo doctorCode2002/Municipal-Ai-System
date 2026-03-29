@@ -1,0 +1,32 @@
+**/.venv
+**/venv
+**/env
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+
+# Frontend source (only the built dist is needed, but we build separately)
+frontend/node_modules
+frontend/src
+frontend/public
+frontend/.env*
+frontend/tsconfig.json
+frontend/vite.config.ts
+frontend/package*.json
+
+# Git / IDE
+.git
+.gitignore
+**/.DS_Store
+*.log
+
+# Docs / scripts (not needed at runtime)
+scripts/
+*.md
+*.excalidraw
+admin_credentials.txt
+HF_README.md
+
+# Training data (not needed at runtime)
+backend/sf311_ready_for_modeling.csv

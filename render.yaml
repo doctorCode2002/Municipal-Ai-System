@@ -1,0 +1,33 @@
+services:
+  # ─── Backend (FastAPI) ───────────────────────────────────────────────────────
+  # rootDir is NOT set so Render uses the repo root.
+  # The app does `from backend.app.main import app`, so root must be in sys.path.
+  - type: web
+    name: municipal-ai-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    plan: starter
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false           # Set this in Render dashboard to your Vercel frontend URL
+      - key: PYTHON_VERSION
+        value: "3.11"
+
+  # ─── Frontend (Vite React) ───────────────────────────────────────────────────
+  - type: web
+    name: municipal-ai-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: starter
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false           # Set this in Render dashboard to your backend URL
+      - key: GEMINI_API_KEY
+        sync: false           # Set this in Render dashboard
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
