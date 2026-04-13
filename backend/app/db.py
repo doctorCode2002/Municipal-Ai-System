@@ -14,12 +14,49 @@ DB_PATH = BASE_DIR / "municipal.db"
 TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
+class TursoDictCursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    @property
+    def lastrowid(self):
+        return self.cursor.lastrowid
+
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        if not row: return None
+        return {c[0]: val for c, val in zip(self.cursor.description, row)}
+
+    def fetchall(self):
+        rows = self.cursor.fetchall()
+        if not rows: return []
+        cols = [c[0] for c in self.cursor.description]
+        return [{cols[i]: val for i, val in enumerate(row)} for row in rows]
+
+class TursoConnectionWrapper:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def execute(self, sql, params=()):
+        c = self.conn.cursor()
+        c.execute(sql, params)
+        return TursoDictCursor(c)
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
 def get_db():
     if TURSO_DATABASE_URL and TURSO_AUTH_TOKEN:
         import libsql_experimental as libsql
         conn = libsql.connect(TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return TursoConnectionWrapper(conn)
+    
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
     
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
