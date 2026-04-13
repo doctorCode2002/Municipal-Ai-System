@@ -22,7 +22,8 @@ def manager_reports(authorization: str | None = Header(default=None)):
     try:
         rows = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE department = ?
             ORDER BY id DESC
@@ -85,7 +86,8 @@ def manager_update_status(
     try:
         row = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE id = ? AND department = ?
             """,
@@ -102,7 +104,8 @@ def manager_update_status(
 
         updated = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE id = ?
             """,

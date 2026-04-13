@@ -27,6 +27,8 @@ class ReportResponse(BaseModel):
     priority: str
     status: str
     department: Optional[str] = None
+    resolution_speed: Optional[str] = None
+    repeat_pattern: Optional[str] = None
 
 
 class AuthUser(BaseModel):
@@ -66,6 +68,8 @@ class ReportItem(BaseModel):
     status: str
     created_at: str
     user_id: Optional[int] = None
+    resolution_speed: Optional[str] = None
+    repeat_pattern: Optional[str] = None
 
 
 class MetricsItem(BaseModel):

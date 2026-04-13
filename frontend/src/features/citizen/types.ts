@@ -10,6 +10,18 @@ export interface Report {
   date: string;
   agency: string;
   priority: string;
+  resolution_speed?: string;
+  repeat_pattern?: string;
+}
+
+export interface ReportResponse {
+  report_id: string;
+  agency: string;
+  priority: string;
+  status: string;
+  department?: string;
+  resolution_speed?: string;
+  repeat_pattern?: string;
 }
 
 export interface ValidationErrors {

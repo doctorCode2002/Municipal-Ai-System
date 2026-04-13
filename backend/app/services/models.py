@@ -5,45 +5,76 @@ from pathlib import Path
 from typing import Optional
 
 import joblib
-import numpy as np
 import pandas as pd
 
-from ..core.constants import HIGH_RISK_SERVICES, SERVICE_NAME_FALLBACK, SERVICE_NAME_MAP
-from ..db import get_db
-from ..schemas import ReportRequest, CategoryResponse
+from ..core.constants import SERVICE_NAME_FALLBACK, SERVICE_NAME_MAP
+from ..schemas import CategoryResponse, ReportRequest
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-TRAINING_DATA_PATH = BASE_DIR / "sf311_ready_for_modeling.csv"
+TRAINING_DATA_PATH = BASE_DIR / "dataset_with_priority.csv"
 
-AGENCY_MODEL_PATH = BASE_DIR / "agency_routing_pipeline_xgb_2025_v2.pkl"
-AGENCY_LABEL_PATH = BASE_DIR / "agency_label_encoder_2025_v2.pkl"
-PRIORITY_MODEL_PATH = BASE_DIR / "priority_xgb_v2025.pkl"
-PRIORITY_LABEL_PATH = BASE_DIR / "priority_encoder.pkl"
+M1_MODEL_PATH = BASE_DIR / "m1_department.pkl"
+M1_PREP_PATH = BASE_DIR / "m1_preprocessor.pkl"
+M2_PIPELINE_PATH = BASE_DIR / "m2_priority.pkl"
+M3_MODEL_PATH = BASE_DIR / "m3_resolution.pkl"
+M3_PREP_PATH = BASE_DIR / "m3_preprocessor.pkl"
+M4_MODEL_PATH = BASE_DIR / "m4_repeat.pkl"
+M4_PREP_PATH = BASE_DIR / "m4_preprocessor.pkl"
+META_PATH = BASE_DIR / "pipeline_meta.pkl"
+
+M1_MODEL = None
+M1_PREP = None
+M2_PIPELINE = None
+M3_MODEL = None
+M3_PREP = None
+M4_MODEL = None
+M4_PREP = None
+PIPELINE_META = None
+DF_HISTORICAL: pd.DataFrame | None = None
+MODEL_LOAD_ERROR: Optional[str] = None
 
 TRAINING_STATS: dict[str, dict] | None = None
 
 
 def load_models():
-    if not AGENCY_MODEL_PATH.exists() or not AGENCY_LABEL_PATH.exists():
-        raise FileNotFoundError("Agency model files not found in backend directory.")
-    if not PRIORITY_MODEL_PATH.exists() or not PRIORITY_LABEL_PATH.exists():
-        raise FileNotFoundError("Priority model files not found in backend directory.")
+    m1 = joblib.load(M1_MODEL_PATH)
+    prep1 = joblib.load(M1_PREP_PATH)
+    m2 = joblib.load(M2_PIPELINE_PATH)
+    m3 = joblib.load(M3_MODEL_PATH)
+    prep3 = joblib.load(M3_PREP_PATH)
+    m4 = joblib.load(M4_MODEL_PATH)
+    prep4 = joblib.load(M4_PREP_PATH)
+    meta = joblib.load(META_PATH)
+    df_hist = pd.read_csv(TRAINING_DATA_PATH)
 
-    agency_pipeline = joblib.load(AGENCY_MODEL_PATH)
-    agency_label = joblib.load(AGENCY_LABEL_PATH)
-    priority_pipeline = joblib.load(PRIORITY_MODEL_PATH)
-    priority_label = joblib.load(PRIORITY_LABEL_PATH)
-    return agency_pipeline, agency_label, priority_pipeline, priority_label
+    text_cols = [
+        "service_name",
+        "service_subtype",
+        "analysis_neighborhood",
+        "street",
+        "police_district",
+        "day_of_week",
+    ]
+    for col in text_cols:
+        if col in df_hist.columns:
+            df_hist[col] = df_hist[col].astype(str).str.strip()
+
+    return m1, prep1, m2, m3, prep3, m4, prep4, meta, df_hist
 
 
 try:
-    AGENCY_PIPELINE, AGENCY_LABEL, PRIORITY_PIPELINE, PRIORITY_LABEL = load_models()
-    MODEL_LOAD_ERROR: Optional[str] = None
+    (
+        M1_MODEL,
+        M1_PREP,
+        M2_PIPELINE,
+        M3_MODEL,
+        M3_PREP,
+        M4_MODEL,
+        M4_PREP,
+        PIPELINE_META,
+        DF_HISTORICAL,
+    ) = load_models()
 except Exception as exc:  # noqa: BLE001
-    AGENCY_PIPELINE = None
-    AGENCY_LABEL = None
-    PRIORITY_PIPELINE = None
-    PRIORITY_LABEL = None
     MODEL_LOAD_ERROR = str(exc)
 
 
@@ -78,16 +109,20 @@ def load_training_stats() -> None:
         "service_name_count",
         "neighborhood_service_count",
         "street_service_count",
-        "agency_request_count",
     ]
+    numeric_cols = [col for col in numeric_cols if col in df.columns]
 
     stats["global"] = df[numeric_cols].median(numeric_only=True).to_dict()
     stats["service_name"] = (
         df.groupby("service_name")[numeric_cols].median(numeric_only=True).to_dict(orient="index")
+        if numeric_cols and "service_name" in df.columns
+        else {}
     )
-    if "analysis_neighborhood" in df.columns:
+    if "analysis_neighborhood" in df.columns and numeric_cols:
         stats["neighborhood"] = (
-            df.groupby("analysis_neighborhood")[numeric_cols].median(numeric_only=True).to_dict(orient="index")
+            df.groupby("analysis_neighborhood")[numeric_cols]
+            .median(numeric_only=True)
+            .to_dict(orient="index")
         )
     else:
         stats["neighborhood"] = {}
@@ -126,118 +161,149 @@ def map_service_name(payload: ReportRequest) -> str:
     return SERVICE_NAME_FALLBACK.get(key, normalize_category(payload.category))
 
 
-def build_features(payload: ReportRequest) -> pd.DataFrame:
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(value, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def predict_all(payload: ReportRequest) -> dict:
+    if MODEL_LOAD_ERROR is not None:
+        raise RuntimeError(MODEL_LOAD_ERROR)
+
     now = datetime.utcnow()
     service_name = map_service_name(payload)
+    service_subtype = (payload.service_subtype or "General").strip() or "General"
+    neighborhood = (payload.analysis_neighborhood or "Unknown").strip() or "Unknown"
+    police_district = (payload.police_district or "Unknown").strip() or "Unknown"
+    street = (payload.location or "Unknown").strip() or "Unknown"
+    hour = now.hour
+    day_of_week = now.strftime("%A")
+    is_weekend = 1 if now.weekday() >= 5 else 0
 
-    data = {
+    if DF_HISTORICAL is not None and not DF_HISTORICAL.empty:
+        dh = DF_HISTORICAL
+
+        sn_count = int(dh[dh["service_name"] == service_name].shape[0])
+        nb_count = int(
+            dh[
+                (dh["analysis_neighborhood"] == neighborhood)
+                & (dh["service_name"] == service_name)
+            ].shape[0]
+        )
+        st_count = int(
+            dh[
+                (dh["street"] == street)
+                & (dh["service_name"] == service_name)
+            ].shape[0]
+        )
+        dist_count = int(
+            dh[
+                (dh["police_district"] == police_district)
+                & (dh["service_name"] == service_name)
+            ].shape[0]
+        )
+        same_loc = int(
+            dh[
+                (dh["service_name"] == service_name)
+                & (dh["service_subtype"] == service_subtype)
+                & (dh["analysis_neighborhood"] == neighborhood)
+                & (dh["street"] == street)
+            ].shape[0]
+        )
+
+        nb_mask = dh["analysis_neighborhood"] == neighborhood
+        geo_density = (
+            _safe_float(dh.loc[nb_mask, "geo_density"].median(), 1.0)
+            if nb_mask.any() and "geo_density" in dh.columns
+            else 1.0
+        )
+        nb_svc_median = (
+            _safe_float(dh["neighborhood_service_count"].median(), 0.0)
+            if "neighborhood_service_count" in dh.columns
+            else 0.0
+        )
+
+        high_demand = 1 if nb_count > nb_svc_median else 0
+        repeat_flag = 1 if st_count > 1 else 0
+    else:
+        sn_count = _safe_int(payload.service_name_count, 1)
+        nb_count = _safe_int(payload.neighborhood_service_count, 1)
+        st_count = _safe_int(payload.street_service_count, 1)
+        dist_count = _safe_int(payload.street_service_count, 1)
+        same_loc = max(st_count, 1)
+        geo_density = _safe_float(payload.geo_density, 1.0)
+        high_demand = (
+            _safe_int(payload.high_demand_area_flag, 0)
+            if payload.high_demand_area_flag is not None
+            else (1 if nb_count >= 5 else 0)
+        )
+        repeat_flag = (
+            _safe_int(payload.repeat_issue_flag, 0)
+            if payload.repeat_issue_flag is not None
+            else (1 if st_count > 1 else 0)
+        )
+
+    shared = {
         "service_name": service_name,
-        "service_subtype": payload.service_subtype or "General",
-        "analysis_neighborhood": payload.analysis_neighborhood or "Unknown",
-        "police_district": payload.police_district or "Unknown",
-        "request_hour": now.hour,
-        "day_of_week": now.strftime("%A"),
-        "is_weekend": 1 if now.weekday() >= 5 else 0,
-        "request_month": now.month,
-        "geo_density": payload.geo_density if payload.geo_density is not None else 5.0,
-        "high_demand_area_flag": payload.high_demand_area_flag if payload.high_demand_area_flag is not None else 0,
-        "repeat_issue_flag": payload.repeat_issue_flag if payload.repeat_issue_flag is not None else 0,
-        "service_name_count": payload.service_name_count if payload.service_name_count is not None else 1,
-        "neighborhood_service_count": payload.neighborhood_service_count if payload.neighborhood_service_count is not None else 1,
-        "street_service_count": payload.street_service_count if payload.street_service_count is not None else 1,
-        "agency_request_count": payload.agency_request_count if payload.agency_request_count is not None else 1,
+        "service_subtype": service_subtype,
+        "analysis_neighborhood": neighborhood,
+        "police_district": police_district,
+        "day_of_week": day_of_week,
+        "street": street,
+        "request_hour": hour,
+        "is_weekend": is_weekend,
+        "geo_density": geo_density,
+        "high_demand_area_flag": high_demand,
+        "repeat_issue_flag": repeat_flag,
+        "service_name_count": sn_count,
+        "neighborhood_service_count": nb_count,
+        "street_service_count": st_count,
+        "same_location_count": same_loc,
+        "neighborhood_repeat_count": nb_count,
+        "street_repeat_count": st_count,
+        "district_repeat_count": dist_count,
     }
 
-    df = pd.DataFrame([data])
-    df.safe.fill_or_default("service_name", "Other")
-    return df
-
-
-def priority_features(base_df: pd.DataFrame) -> pd.DataFrame:
-    df = base_df.copy()
-    service_name = str(df.loc[0, "service_name"]).strip()
-    high_risk_flag = 1 if service_name in HIGH_RISK_SERVICES else 0
-    priority_score = (
-        40 * high_risk_flag
-        + 22 * df.loc[0, "high_demand_area_flag"]
-        + 18 * df.loc[0, "repeat_issue_flag"]
-        + 12 * np.clip(df.loc[0, "geo_density"], 1, 10) / 10
-        + 8 * df.loc[0, "is_weekend"]
+    r1 = pd.DataFrame(
+        [{"service_name": service_name, "service_subtype": service_subtype}],
+        columns=["service_name", "service_subtype"],
     )
+    department = M1_MODEL.predict(M1_PREP.transform(r1))[0]
 
-    df["high_risk_flag"] = high_risk_flag
-    df["priority_score"] = priority_score
-    return df
+    feat2_text = str(PIPELINE_META.get("feat2_text", "problem_text"))
+    feat2_count = list(PIPELINE_META.get("feat2_count", []))
+    row2 = {feat2_text: f"{service_name} {service_subtype}"}
+    row2.update({f: shared.get(f, 0) for f in feat2_count})
+    r2 = pd.DataFrame([row2])
+    priority = M2_PIPELINE.predict(r2)[0]
+    priority_proba = M2_PIPELINE.predict_proba(r2)[0]
+    priority_classes = M2_PIPELINE.classes_
+    priority_conf = {c: f"{round(float(p) * 100)}%" for c, p in zip(priority_classes, priority_proba)}
 
+    r3 = pd.DataFrame([{f: shared.get(f, 0) for f in PIPELINE_META["feat3"]}])
+    prob_fast = float(M3_MODEL.predict_proba(M3_PREP.transform(r3))[0][1])
+    is_fast = prob_fast >= 0.4
+    resolution_speed = "Fast (≤72h)" if is_fast else "Slow (>72h)"
 
-def derive_counts(payload: ReportRequest) -> dict:
-    load_training_stats()
-    stats = TRAINING_STATS or {}
-    global_stats = stats.get("global", {})
-    service_stats = stats.get("service_name", {})
-    neighborhood_stats = stats.get("neighborhood", {})
-
-    conn = get_db()
-    try:
-        total = conn.execute("SELECT COUNT(*) AS c FROM reports").fetchone()["c"]
-        service_count = conn.execute(
-            "SELECT COUNT(*) AS c FROM reports WHERE category = ?",
-            (payload.category,),
-        ).fetchone()["c"]
-        neighborhood_count = 0
-        if payload.analysis_neighborhood:
-            neighborhood_count = conn.execute(
-                """
-                SELECT COUNT(*) AS c FROM reports
-                WHERE analysis_neighborhood = ? AND category = ?
-                """,
-                (payload.analysis_neighborhood, payload.category),
-            ).fetchone()["c"]
-
-        street_count = 0
-        if payload.location:
-            street_count = conn.execute(
-                "SELECT COUNT(*) AS c FROM reports WHERE location = ?",
-                (payload.location,),
-            ).fetchone()["c"]
-
-        repeat_flag = 1 if street_count > 0 else 0
-        high_demand = 1 if neighborhood_count >= 5 else 0
-        geo_density = min(max(neighborhood_count + 1, 1), 10)
-    finally:
-        conn.close()
-
-    db_size = int(total or 0)
-    service_name = normalize_category(payload.category)
-    service_prior = service_stats.get(service_name, {})
-    neighborhood_prior = neighborhood_stats.get(payload.analysis_neighborhood or "", {})
-
-    def _prior_value(key: str) -> float:
-        if key in neighborhood_prior:
-            return float(neighborhood_prior[key])
-        if key in service_prior:
-            return float(service_prior[key])
-        return float(global_stats.get(key, 1))
-
-    if db_size < 20:
-        service_count = max(service_count, int(_prior_value("service_name_count")))
-        neighborhood_count = max(neighborhood_count, int(_prior_value("neighborhood_service_count")))
-        street_count = max(street_count, int(_prior_value("street_service_count")))
-        total = max(total, int(_prior_value("agency_request_count")))
-        if repeat_flag == 0:
-            repeat_flag = int(round(_prior_value("repeat_issue_flag")))
-        if high_demand == 0:
-            high_demand = int(round(_prior_value("high_demand_area_flag")))
-        geo_density = float(_prior_value("geo_density"))
+    r4 = pd.DataFrame([{f: shared.get(f, 0) for f in PIPELINE_META["feat4"]}])
+    repeat_pattern = M4_MODEL.predict(M4_PREP.transform(r4))[0]
 
     return {
-        "service_name_count": int(service_count or 0) + 1,
-        "neighborhood_service_count": int(neighborhood_count or 0) + 1,
-        "street_service_count": int(street_count or 0) + 1,
-        "agency_request_count": int(total or 0) + 1,
-        "repeat_issue_flag": repeat_flag,
-        "high_demand_area_flag": high_demand,
-        "geo_density": float(geo_density),
+        "department": department,
+        "priority": priority,
+        "priority_conf": priority_conf,
+        "resolution_speed": resolution_speed,
+        "prob_fast_pct": f"{prob_fast * 100:.0f}%",
+        "repeat_pattern": repeat_pattern,
     }
 
 

@@ -7,7 +7,12 @@ type ReportFormCardProps = {
   isSuccess: boolean;
   isSubmitting: boolean;
   submitError: string | null;
-  lastRouting: { agency: string; priority: string } | null;
+  lastRouting: {
+    agency: string;
+    priority: string;
+    resolution_speed?: string;
+    repeat_pattern?: string;
+  } | null;
   validationErrors: ValidationErrors;
   title: string;
   description: string;
@@ -77,7 +82,9 @@ export default function ReportFormCard({
           </p>
           {lastRouting && (
             <div className="mt-4 text-xs text-emerald-200/80">
-              Routed to {lastRouting.agency} - Priority {lastRouting.priority}
+              <div>Routed to {lastRouting.agency} - Priority {lastRouting.priority}</div>
+              {lastRouting.resolution_speed && <div>Expected resolution: {lastRouting.resolution_speed}</div>}
+              {lastRouting.repeat_pattern && <div>Repeat pattern: {lastRouting.repeat_pattern}</div>}
             </div>
           )}
         </motion.div>

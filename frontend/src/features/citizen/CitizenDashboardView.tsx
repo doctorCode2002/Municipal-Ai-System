@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { LogOut, FileText, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, getAuthToken } from "../../services/api";
-import type { Report, ValidationErrors } from "./types";
+import type { Report, ReportResponse, ValidationErrors } from "./types";
 import ReportFormCard from "./components/ReportFormCard";
 import ReportsListCard from "./components/ReportsListCard";
 
@@ -23,7 +23,12 @@ export default function CitizenDashboardView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [lastRouting, setLastRouting] = useState<{ agency: string; priority: string } | null>(null);
+  const [lastRouting, setLastRouting] = useState<{
+    agency: string;
+    priority: string;
+    resolution_speed?: string;
+    repeat_pattern?: string;
+  } | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isPredictingCategory, setIsPredictingCategory] = useState(false);
   const [predictMessage, setPredictMessage] = useState<string | null>(null);
@@ -84,6 +89,8 @@ export default function CitizenDashboardView() {
           date: item.created_at ? new Date(item.created_at).toLocaleDateString() : "",
           agency: item.agency,
           priority: item.priority,
+          resolution_speed: item.resolution_speed,
+          repeat_pattern: item.repeat_pattern,
         }));
         setReports(mapped);
       } catch {
@@ -226,10 +233,15 @@ export default function CitizenDashboardView() {
         throw new Error(message);
       }
 
-      const data = await response.json();
+      const data: ReportResponse = await response.json();
       setIsSubmitting(false);
       setIsSuccess(true);
-      setLastRouting({ agency: data.agency, priority: data.priority });
+      setLastRouting({
+        agency: data.agency,
+        priority: data.priority,
+        resolution_speed: data.resolution_speed,
+        repeat_pattern: data.repeat_pattern,
+      });
 
       const newReport: Report = {
         id: data.report_id || Math.random().toString(36).substring(2, 9),
@@ -241,6 +253,8 @@ export default function CitizenDashboardView() {
         date: new Date().toLocaleDateString(),
         agency: data.agency || "Unknown",
         priority: data.priority || "Unknown",
+        resolution_speed: data.resolution_speed,
+        repeat_pattern: data.repeat_pattern,
       };
       setReports((prev) => [newReport, ...prev]);
 

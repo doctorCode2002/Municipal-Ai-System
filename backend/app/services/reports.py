@@ -6,7 +6,10 @@ from ..schemas import MetricsItem, ReportItem
 
 
 def format_report_row(row, include_user: bool = False) -> ReportItem:
-    dept = row["department"] if "department" in row.keys() else None
+    keys = row.keys()
+    dept = row["department"] if "department" in keys else None
+    res_speed = row["resolution_speed"] if "resolution_speed" in keys else None
+    rep_pattern = row["repeat_pattern"] if "repeat_pattern" in keys else None
     return ReportItem(
         id=int(row["id"]),
         report_id=f"RPT-{int(row['id']):06d}",
@@ -20,6 +23,8 @@ def format_report_row(row, include_user: bool = False) -> ReportItem:
         status=row["status"],
         created_at=row["created_at"],
         user_id=int(row["user_id"]) if include_user else None,
+        resolution_speed=res_speed,
+        repeat_pattern=rep_pattern,
     )
 
 

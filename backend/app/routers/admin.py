@@ -29,7 +29,8 @@ def admin_reports(authorization: str | None = Header(default=None)):
     try:
         rows = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             ORDER BY id DESC
             """
@@ -231,7 +232,8 @@ def admin_update_report_department(report_id: str, payload: DepartmentUpdateRequ
 
         row = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE id = ?
             """,
@@ -245,7 +247,8 @@ def admin_update_report_department(report_id: str, payload: DepartmentUpdateRequ
 
         updated = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE id = ?
             """,

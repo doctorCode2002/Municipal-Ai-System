@@ -3,27 +3,19 @@ from __future__ import annotations
 from datetime import datetime
 from fastapi import APIRouter, Header, HTTPException
 
-from ..core.constants import AGENCY_TO_DEPARTMENT
 from ..db import get_db
 from ..schemas import CategoryRequest, CategoryResponse, ReportItem, ReportRequest, ReportResponse
 from ..services.auth import get_user_from_token
-from ..services.models import (
-    AGENCY_LABEL,
-    AGENCY_PIPELINE,
-    PRIORITY_LABEL,
-    PRIORITY_PIPELINE,
-    MODEL_LOAD_ERROR,
-    build_features,
-    derive_counts,
-    predict_category,
-    priority_features,
-)
+from ..services.models import MODEL_LOAD_ERROR, predict_all, predict_category
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
 
 def _format_report_row(row) -> ReportItem:
-    dept = row["department"] if "department" in row.keys() else None
+    keys = row.keys()
+    dept = row["department"] if "department" in keys else None
+    res_speed = row["resolution_speed"] if "resolution_speed" in keys else None
+    rep_pattern = row["repeat_pattern"] if "repeat_pattern" in keys else None
     return ReportItem(
         id=int(row["id"]),
         report_id=f"RPT-{int(row['id']):06d}",
@@ -37,6 +29,8 @@ def _format_report_row(row) -> ReportItem:
         status=row["status"],
         created_at=row["created_at"],
         user_id=int(row["user_id"]),
+        resolution_speed=res_speed,
+        repeat_pattern=rep_pattern,
     )
 
 
@@ -52,7 +46,8 @@ def list_reports(authorization: str | None = Header(default=None)):
     try:
         rows = conn.execute(
             """
-            SELECT id, user_id, title, description, category, location, department, agency, priority, status, created_at
+            SELECT id, user_id, title, description, category, location, department, agency, priority,
+                   status, created_at, resolution_speed, repeat_pattern
             FROM reports
             WHERE user_id = ?
             ORDER BY id DESC
@@ -71,36 +66,16 @@ def create_report(payload: ReportRequest, authorization: str | None = Header(def
 
     user = get_user_from_token(authorization)
 
-    derived = derive_counts(payload)
-    payload = payload.model_copy(
-        update={
-            "geo_density": payload.geo_density or derived["geo_density"],
-            "high_demand_area_flag": payload.high_demand_area_flag if payload.high_demand_area_flag is not None else derived["high_demand_area_flag"],
-            "repeat_issue_flag": payload.repeat_issue_flag if payload.repeat_issue_flag is not None else derived["repeat_issue_flag"],
-            "service_name_count": payload.service_name_count if payload.service_name_count is not None else derived["service_name_count"],
-            "neighborhood_service_count": payload.neighborhood_service_count if payload.neighborhood_service_count is not None else derived["neighborhood_service_count"],
-            "street_service_count": payload.street_service_count if payload.street_service_count is not None else derived["street_service_count"],
-            "agency_request_count": payload.agency_request_count if payload.agency_request_count is not None else derived["agency_request_count"],
-        }
-    )
-
-    base_df = build_features(payload)
-    priority_df = priority_features(base_df)
-
     try:
-        agency_pred = AGENCY_PIPELINE.predict(base_df)
-        agency_label = AGENCY_LABEL.inverse_transform(agency_pred)[0]
+        result = predict_all(payload)
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"Agency prediction failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {exc}")
 
-    try:
-        priority_pred = PRIORITY_PIPELINE.predict(priority_df)
-        priority_label = PRIORITY_LABEL.inverse_transform(priority_pred)[0]
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"Priority prediction failed: {exc}")
-
+    department = str(result["department"])
+    priority_label = result["priority"]
+    resolution_speed = str(result["resolution_speed"])
+    repeat_pattern = str(result["repeat_pattern"])
     status = "Routed"
-    department = AGENCY_TO_DEPARTMENT.get(str(agency_label), "Admin / 311")
 
     conn = get_db()
     try:
@@ -111,9 +86,10 @@ def create_report(payload: ReportRequest, authorization: str | None = Header(def
                 department,
                 service_subtype, analysis_neighborhood, police_district,
                 geo_density, high_demand_area_flag, repeat_issue_flag,
-                agency, priority, status, created_at
+                agency, priority, status, created_at,
+                resolution_speed, repeat_pattern
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(user["id"]),
@@ -128,10 +104,12 @@ def create_report(payload: ReportRequest, authorization: str | None = Header(def
                 payload.geo_density,
                 payload.high_demand_area_flag,
                 payload.repeat_issue_flag,
-                str(agency_label),
+                department,
                 str(priority_label),
                 status,
                 datetime.utcnow().isoformat(),
+                resolution_speed,
+                repeat_pattern,
             ),
         )
         conn.commit()
@@ -141,8 +119,10 @@ def create_report(payload: ReportRequest, authorization: str | None = Header(def
 
     return ReportResponse(
         report_id=f"RPT-{report_id:06d}",
-        agency=str(agency_label),
+        agency=department,
         priority=str(priority_label),
         status=status,
         department=department,
+        resolution_speed=resolution_speed,
+        repeat_pattern=repeat_pattern,
     )

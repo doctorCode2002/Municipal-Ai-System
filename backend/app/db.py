@@ -5,14 +5,22 @@ from pathlib import Path
 import re
 import sqlite3
 
-from .core.constants import AGENCY_TO_DEPARTMENT
 from .core.security import pwd_context
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "municipal.db"
 
+TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
-def get_db() -> sqlite3.Connection:
+def get_db():
+    if TURSO_DATABASE_URL and TURSO_AUTH_TOKEN:
+        import libsql_experimental as libsql
+        conn = libsql.connect(TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
+        conn.row_factory = sqlite3.Row
+        return conn
+    
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -62,6 +70,8 @@ def init_db() -> None:
                 agency TEXT NOT NULL,
                 priority TEXT NOT NULL,
                 status TEXT NOT NULL,
+                resolution_speed TEXT,
+                repeat_pattern TEXT,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
@@ -105,6 +115,8 @@ def init_db() -> None:
             ("geo_density", "REAL"),
             ("high_demand_area_flag", "INTEGER"),
             ("repeat_issue_flag", "INTEGER"),
+            ("resolution_speed", "TEXT"),
+            ("repeat_pattern", "TEXT"),
         ]
         for name, col_type in migrations:
             if name not in columns:
@@ -149,10 +161,20 @@ def ensure_demo_users() -> None:
 
 
 def ensure_departments() -> None:
-    default_departments = sorted(set(AGENCY_TO_DEPARTMENT.values()))
+    new_departments = [
+        "Admin / 311",
+        "Public Works - Cleaning & Infrastructure",
+        "Waste Management Services",
+        "Parking Enforcement",
+        "Urban Services",
+        "Transportation Infrastructure Services",
+        "General Municipal Services",
+        "Social and Community Services",
+        "Regulatory and Inspection Services",
+    ]
     conn = get_db()
     try:
-        for name in default_departments:
+        for name in new_departments:
             existing = conn.execute(
                 "SELECT id FROM departments WHERE name = ?",
                 (name,),
@@ -261,14 +283,12 @@ def backfill_departments() -> None:
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT id, agency FROM reports WHERE department IS NULL"
+            "SELECT id FROM reports WHERE department IS NULL"
         ).fetchall()
         for row in rows:
-            agency = row["agency"]
-            department = AGENCY_TO_DEPARTMENT.get(str(agency), "Admin / 311")
             conn.execute(
-                "UPDATE reports SET department = ? WHERE id = ?",
-                (department, int(row["id"])),
+                "UPDATE reports SET department = 'Admin / 311' WHERE id = ?",
+                (int(row["id"]),),
             )
         conn.commit()
     finally:
