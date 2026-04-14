@@ -338,3 +338,5 @@ def startup() -> None:
     fix_department_names()
     backfill_user_departments()
     backfill_departments()
+    ensure_demo_users()
+    ensure_manager_accounts()
