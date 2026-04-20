@@ -227,36 +227,12 @@ export default function LandingPageView() {
           </div>
 
           {/* Center Logo */}
-          <div className="flex items-center justify-center md:absolute md:left-1/2 md:-translate-x-1/2 gap-2">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 2L2 7L12 12L22 7L12 2Z"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M2 17L12 22L22 17"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M2 12L12 17L22 12"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <div className="flex items-center justify-center md:absolute md:left-1/2 md:-translate-x-1/2 gap-3">
+            <img 
+              src="/whitelogo.png" 
+              alt="CivicMind Logo" 
+              className="h-6 md:h-8 w-auto object-contain"
+            />
             <span className="font-serif font-semibold tracking-wide text-sm bg-linear-to-r from-white to-gray-400 bg-clip-text text-transparent">
               CivicMind
             </span>
@@ -490,7 +466,7 @@ export default function LandingPageView() {
                         }
                       }}
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-colors"
-                      placeholder="????"
+                      placeholder="Enter your password"
                     />
                     {authErrors.password && (
                       <p className="text-xs text-red-300 mt-1">
@@ -613,25 +589,25 @@ export default function LandingPageView() {
               {[...Array(2)].map((_, i) => (
                 <React.Fragment key={i}>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Metropolis
+                    Powered
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Oakhaven
+                    Predict
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Riverdale
+                    Routing
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Silverwood
+                    Dynamic
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Springfield
+                    Optimal
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Centerville
+                    Smarter
                   </div>
                   <div className="flex items-center gap-2 font-serif italic text-xl tracking-tight">
-                    Fairview
+                    Instant
                   </div>
                 </React.Fragment>
               ))}

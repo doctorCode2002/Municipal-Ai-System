@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BarChart3, Target, Cpu, Database, ArrowUpRight } from "lucide-react";
+import { Construction, Trash2, ShieldAlert, Droplets, ArrowUpRight } from "lucide-react";
 import AnimatedCounter from "./AnimatedCounter";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -46,17 +46,17 @@ export default function MetricsBento() {
 
   const cards = [
     {
-      title: "Efficiency Gain",
-      value: <AnimatedCounter end={42} suffix="%" />,
-      description: "Reduction in manual sorting and administrative overhead across departments.",
-      icon: <BarChart3 className="w-5 h-5 text-blue-400" />,
+      title: "Public Infrastructure",
+      value: "Roads & Transit",
+      description: "Automated pothole detection and priority routing for city public works departments.",
+      icon: <Construction className="w-5 h-5 text-blue-400" />,
       className: "md:col-span-2 md:row-span-2 bg-linear-to-br from-blue-500/10 to-transparent",
     },
     {
-      title: "Model Accuracy",
-      value: <AnimatedCounter end={98} suffix="%" />,
-      description: "High-precision categorization and priority predictions.",
-      icon: <Target className="w-5 h-5 text-emerald-400" />,
+      title: "Environmental Health",
+      value: "Waste & Hygiene",
+      description: "Intelligent scheduling for illegal dumping reports and sanitation overflow alerts.",
+      icon: <Trash2 className="w-5 h-5 text-emerald-400" />,
       className: "md:col-span-2 bg-linear-to-r from-emerald-500/10 to-transparent",
       extra: (
         <div className="mt-4 h-12 w-full flex items-end gap-1 overflow-hidden">
@@ -71,17 +71,17 @@ export default function MetricsBento() {
       ),
     },
     {
-      title: "AI Analysis",
-      value: "Real-time",
-      description: "Instant priority scoring upon report submission.",
-      icon: <Cpu className="w-5 h-5 text-purple-400" />,
+      title: "Rapid Response",
+      value: "Safety & Hazards",
+      description: "Instant classification of structural hazards and immediate safety team routing.",
+      icon: <ShieldAlert className="w-5 h-5 text-purple-400" />,
       className: "bg-linear-to-br from-purple-500/10 to-transparent",
     },
     {
-      title: "Dataset",
-      value: <AnimatedCounter end={10} suffix="k+" />,
-      description: "Trained on municipal records.",
-      icon: <Database className="w-5 h-5 text-amber-400" />,
+      title: "City Utilities",
+      value: "Grid Repairs",
+      description: "Managing streetlight outages and water leakage reports with predictive urgency.",
+      icon: <Droplets className="w-5 h-5 text-amber-400" />,
       className: "bg-linear-to-br from-amber-500/10 to-transparent",
     },
   ];
@@ -92,17 +92,17 @@ export default function MetricsBento() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-xl">
             <h2 className="text-2xl md:text-3xl font-serif mb-4 tracking-tight text-white">
-              Data-Driven Governance
+              Real-World Use Cases
             </h2>
             <p className="text-gray-400 text-xs md:text-sm font-light leading-relaxed">
-              We leverage large-scale historical datasets and high-precision models to ensure 
-              every report is handled with the appropriate urgency and expertise.
+              CivicMind is designed to handle the diverse spectrum of municipal challenges, 
+              from infrastructure triage to environmental sanitation.
             </p>
           </div>
           <div className="md:pb-1">
             <div className="flex items-center gap-2 text-[10px] uppercase font-medium tracking-widest text-emerald-400 bg-emerald-500/5 px-4 py-2 rounded-full border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Performance Metrics
+              Operational Use Cases
             </div>
           </div>
         </div>

@@ -21,7 +21,7 @@ const steps = [
     icon: <Zap className="w-6 h-6 text-amber-400" />,
     title: "2. AI Analysis",
     description: "CivicMind instantly predicts the category (e.g. Roads, Waste) and assigns a priority score (High/Medium/Low).",
-    detail: "Models trained on 10,000+ historical records for high accuracy.",
+    detail: "Models trained on 1000+ historical records for high accuracy.",
     color: "from-amber-500/20 to-transparent",
     border: "border-amber-500/30",
   },
