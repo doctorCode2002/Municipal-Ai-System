@@ -568,7 +568,7 @@ export default function LandingPageView() {
         {/* Logo Cloud */}
         <motion.div
           variants={fadeIn}
-          className="shrink-0 flex flex-col items-center justify-center py-6 md:py-8 relative z-10 w-full overflow-hidden hidden md:flex"
+          className="shrink-0 flex flex-col items-center justify-center py-6 md:py-8 relative z-10 w-full overflow-hidden md:flex"
         >
           <p className="text-gray-500 text-[10px] md:text-xs mb-4 md:mb-6 font-medium tracking-wide uppercase">
             Built for municipal service operations
