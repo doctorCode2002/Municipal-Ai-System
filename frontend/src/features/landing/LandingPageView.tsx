@@ -1,5 +1,6 @@
 import { ArrowRight, Menu, X, LogIn } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import whiteLogo from "../../assets/whitelogo.png";
 import { AnimatePresence, motion, Variants } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
@@ -229,7 +230,7 @@ export default function LandingPageView() {
           {/* Center Logo */}
           <div className="flex items-center justify-center md:absolute md:left-1/2 md:-translate-x-1/2 gap-3">
             <img 
-              src="/whitelogo.png" 
+              src={whiteLogo} 
               alt="CivicMind Logo" 
               className="h-6 md:h-8 w-auto object-contain"
             />
