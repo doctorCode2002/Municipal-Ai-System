@@ -17,17 +17,17 @@ app_port: 7860
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
-- **🧠 Intelligent Routing**: Automatically predicts the department and category of a report using a custom NLP pipeline.
-- **⚖️ Priority Prediction**: Evaluates report urgency (High/Medium/Low) based on historical patterns and safety risks.
-- **📊 Real-time Dashboard**: A unified interface for department managers to oversee queues and verify AI predictions.
-- **📱 Citizen Portal**: Intuitive submission process for citizens to report issues and track resolution status.
-- **✨ Premium UI/UX**: Designed with modern aesthetics, featuring GSAP-powered animations and responsive Bento grids.
+- ** Intelligent Routing**: Automatically predicts the department and category of a report using a custom NLP pipeline.
+- ** Priority Prediction**: Evaluates report urgency (High/Medium/Low) based on historical patterns and safety risks.
+- ** Real-time Dashboard**: A unified interface for department managers to oversee queues and verify AI predictions.
+- ** Citizen Portal**: Intuitive submission process for citizens to report issues and track resolution status.
+- ** Premium UI/UX**: Designed with modern aesthetics, featuring GSAP-powered animations and responsive Bento grids.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **Framework**: [React 19](https://reactjs.org/) + [Vite](https://vitejs.dev/)
@@ -44,7 +44,7 @@ app_port: 7860
 
 ---
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```text
 ├── backend/                # FastAPI Application
@@ -62,7 +62,7 @@ app_port: 7860
 
 ---
 
-## ⚙️ Quick Start
+##  Quick Start
 
 ### 1. Backend Setup
 ```bash
@@ -83,7 +83,7 @@ npm run dev
 
 ---
 
-## 🧪 Core AI Pipeline
+##  Core AI Pipeline
 
 The system uses a sequential four-model pipeline for each report:
 1. **Department Model**: Predicts the target municipal department.
@@ -95,13 +95,13 @@ The system uses a sequential four-model pipeline for each report:
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions to help make our cities smarter! Please feel free to open issues or submit pull requests.
 
