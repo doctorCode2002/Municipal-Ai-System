@@ -148,10 +148,9 @@ from utils import load_and_prepare, make_preprocessor, get_cols
 ---
 
 ##  Data
-
 | File | Description |
 |------|-------------|
-| `../Datasets/sf_311_dataset.csv` | Original raw 311 municipal complaints dataset |
-| `../Datasets/dataset_with_priority.csv` | Cleaned dataset with engineered features and priority labels |
+| [`sf_311_dataset.csv`](../Datasets/sf_311_dataset.csv) | Original raw 311 municipal complaints dataset |
+| [`dataset_with_priority.csv`](../Datasets/dataset_with_priority.csv) | Cleaned dataset with engineered features and priority labels |
 
-See [`Datasets/README.md`](Datasets) for full data documentation.
+See [`Datasets/README.md`](../Datasets/README.md) for full data documentation.
