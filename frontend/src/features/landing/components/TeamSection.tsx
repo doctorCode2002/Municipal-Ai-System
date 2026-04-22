@@ -35,6 +35,14 @@ export default function TeamSection({ members }: TeamSectionProps) {
               <h3 className="text-sm font-medium mb-1">{member.name}</h3>
               <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-3 font-medium">{member.role}</p>
               <p className="text-xs text-gray-400 font-light leading-relaxed">{member.bio}</p>
+              <a
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 text-xs text-gray-300 hover:text-white transition-colors"
+              >
+                LinkedIn
+              </a>
             </ScrubReveal>
           ))}
         </div>

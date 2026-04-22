@@ -86,6 +86,14 @@ export default function TeamCarousel({ members }: TeamCarouselProps) {
               <p className="text-xs text-gray-400 font-light leading-relaxed line-clamp-3">
                 {member.bio}
               </p>
+              <a
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 text-xs text-gray-300 hover:text-white transition-colors"
+              >
+                LinkedIn
+              </a>
             </div>
           </div>
         ))}

@@ -5,6 +5,7 @@ export type TeamMember = {
   role: string;
   bio: string;
   image: string;
+  linkedin: string;
 };
 
 export type FaqItem = {
@@ -41,17 +42,20 @@ export const team: TeamMember[] = [
     role: "AI & Data Science Developer",
     bio: "AI & Data Science student passionate about programming, data analysis, and machine learning. Focused on building smart, real-world solutions.",
     image: teamImages.bushra,
+    linkedin: "https://www.linkedin.com/in/bushrasami132006",
   },
   {
     name: "Nadeen Monther Shadeed",
     role: "AI and Front-End Developer",
     bio: "Computer Systems Engineering student passionate about problem solving, AI, and front-end development, building practical solutions.",
     image: teamImages.nadeen,
+    linkedin: "https://www.linkedin.com/in/nadeen-shadeed-60211a2a5/",
   },
   {
     name: "Mohammed Ashraf Abu Taleb",
     role: "Full Stack Web Developer",
     bio: "Full-stack web developer passionate about building interactive, user-friendly applications using modern web technologies.",
     image: teamImages.mohammed,
+    linkedin: "https://www.linkedin.com/in/mohammed2002",
   },
 ];
