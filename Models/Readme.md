@@ -133,7 +133,7 @@ Solution: discretise into 3 classes
 
 ---
 
-## 🔗 Shared Utilities (`utils.py`)
+##  Shared Utilities (`utils.py`)
 
 All models import from `utils.py`:
 
