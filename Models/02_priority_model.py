@@ -7,7 +7,7 @@ Task        : Multi-class classification (High / Medium / Low)
 Algorithm   : Random Forest Classifier + TF-IDF (Hybrid NLP + Structured)
 Input       : problem_text (TF-IDF bigrams) + 10 count/context features
 Output      : Priority level + confidence scores
-Accuracy    : 99.5%  (test set, stratified 80/20 split)
+Accuracy    : 88%  (test set, stratified 80/20 split)
 
 Why hybrid?
 ───────────
