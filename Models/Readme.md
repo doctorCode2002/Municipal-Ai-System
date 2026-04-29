@@ -6,12 +6,12 @@ This folder contains all machine learning code for the CivicMind municipal compl
 
 ##  The Four Models
 
-| # | File | Task | Algorithm | Key Input | Output | Performance |
-|---|------|------|-----------|-----------|--------|-------------|
-| 1 | `01_department_model.py` | Department classification | Random Forest | service_name + subtype | 8 departments | **75.5% Accuracy** |
-| 2 | `02_priority_model.py` | Priority prediction | RF + TF-IDF | Complaint text + 10 count features | High / Medium / Low | **88% Accuracy** |
-| 3 | `03_resolution_model.py` | Resolution speed | Random Forest | 13 structured features | Fast ≤72h / Slow | **ROC-AUC 0.817** |
-| 4 | `04_repeat_model.py` | Repeat pattern | Random Forest | 17 location + count features | once / twice / 3+ | **87.0% Accuracy** |
+| # | File | Task | Algorithm | Key Input | Output | 
+|---|------|------|-----------|-----------|--------|
+| 1 | `01_department_model.py` | Department classification | Random Forest | service_name + subtype | 8 departments |
+| 2 | `02_priority_model.py` | Priority prediction | RF + TF-IDF | Complaint text + 10 count features | High / Medium / Low |
+| 3 | `03_resolution_model.py` | Resolution speed | Random Forest | 13 structured features | Fast ≤72h / Slow |
+| 4 | `04_repeat_model.py` | Repeat pattern | Random Forest | 17 location + count features | once / twice / 3+ |
 
 ---
 
